@@ -18,9 +18,12 @@ export const AuthProvider = ({ children }) => {
         }
     }, [token]);
 
+    // Use environment variable or fallback to localhost
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
     const fetchUser = async () => {
         try {
-            const res = await axios.get('http://localhost:5001/api/auth/me');
+            const res = await axios.get(`${API_URL}/api/auth/me`);
             setUser(res.data);
         } catch (err) {
             console.error('Error fetching user', err);
@@ -31,7 +34,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const login = async (email, password) => {
-        const res = await axios.post('http://localhost:5001/api/auth/login', { email, password });
+        const res = await axios.post(`${API_URL}/api/auth/login`, { email, password });
         localStorage.setItem('token', res.data.token);
         setToken(res.data.token);
         setUser(res.data.user);
@@ -39,7 +42,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const signup = async (username, email, password) => {
-        const res = await axios.post('http://localhost:5001/api/auth/signup', { username, email, password });
+        const res = await axios.post(`${API_URL}/api/auth/signup`, { username, email, password });
         localStorage.setItem('token', res.data.token);
         setToken(res.data.token);
         setUser(res.data.user);
