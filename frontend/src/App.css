@@ -1,0 +1,153 @@
+/* Utilities */
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.card {
+  background-color: var(--card-bg);
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 28rem;
+  border: 1px solid var(--border-color);
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.text-blue {
+  color: #60a5fa;
+  /* blue-400 */
+}
+
+.text-green {
+  color: #4ade80;
+  /* green-400 */
+}
+
+.error-msg {
+  background-color: var(--error-color);
+  color: white;
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #d1d5db;
+  /* gray-300 */
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+  background-color: #374151;
+  /* gray-700 */
+  border: 1px solid var(--border-color);
+  color: white;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: var(--primary-color);
+}
+
+.btn {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+  font-weight: 700;
+  color: white;
+  transition: background-color 0.2s;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-success {
+  background-color: var(--success-color);
+}
+
+.btn-success:hover {
+  background-color: var(--success-hover);
+}
+
+.link-text {
+  margin-top: 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.link-text a {
+  color: #60a5fa;
+  /* blue-400 */
+}
+
+.link-text a:hover {
+  text-decoration: underline;
+}
+
+/* Dashboard Specific */
+.dashboard-container {
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.dashboard-content {
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+
+.btn-logout {
+  background-color: #dc2626;
+  /* red-600 */
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+}
+
+.btn-logout:hover {
+  background-color: #b91c1c;
+  /* red-700 */
+}
+
+.user-details {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #374151;
+  /* gray-700 */
+  border-radius: 0.25rem;
+}
