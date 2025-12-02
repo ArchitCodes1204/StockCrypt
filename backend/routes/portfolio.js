@@ -12,20 +12,28 @@ const Portfolio = require('../models/Portfolio');
  */
 router.post('/transaction', authMiddleware, async (req, res) => {
     try {
+        console.log('📥 Transaction request received:', req.body);
+        console.log('👤 User ID from auth:', req.user?.userId);
+
         const { symbol, type, quantity, pricePerShare, transactionDate, notes } = req.body;
 
         // Validation
         if (!symbol || !type || !quantity || !pricePerShare) {
+            console.error('❌ Missing required fields:', { symbol, type, quantity, pricePerShare });
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
         if (!['BUY', 'SELL'].includes(type.toUpperCase())) {
+            console.error('❌ Invalid type:', type);
             return res.status(400).json({ error: 'Type must be BUY or SELL' });
         }
 
         if (quantity <= 0 || pricePerShare <= 0) {
+            console.error('❌ Invalid values:', { quantity, pricePerShare });
             return res.status(400).json({ error: 'Quantity and price must be positive' });
         }
+
+        console.log('✅ Validation passed, processing transaction...');
 
         const transaction = await portfolioService.processTransaction(req.user.userId, {
             symbol,
@@ -36,9 +44,11 @@ router.post('/transaction', authMiddleware, async (req, res) => {
             notes
         });
 
+        console.log('✅ Transaction created successfully:', transaction._id);
         res.status(201).json(transaction);
     } catch (error) {
-        console.error('Transaction creation error:', error);
+        console.error('❌ Transaction creation error:', error.message);
+        console.error('Stack trace:', error.stack);
         res.status(500).json({ error: error.message });
     }
 });
