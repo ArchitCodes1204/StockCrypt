@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     }, [token]);
 
     // Use environment variable or fallback to localhost
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
     const fetchUser = async () => {
         try {
