@@ -12,7 +12,15 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5177', 'https://stock-crypt-theta.vercel.app'],
+    origin: [
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'http://localhost:5175',
+        'http://localhost:5177',
+        'https://stock-crypt-theta.vercel.app',
+        'https://stock-crypt-git-main-architcodes1204s-projects.vercel.app',
+        'https://stock-crypt-architcodes1204s-projects.vercel.app'
+    ],
     credentials: true
 }));
 
