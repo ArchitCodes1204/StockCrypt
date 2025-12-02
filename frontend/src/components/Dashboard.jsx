@@ -86,12 +86,21 @@ const Dashboard = () => {
     };
 
     const formatCurrency = (value) => {
+        if (value === undefined || value === null || isNaN(value)) return '$0.00';
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
             minimumFractionDigits: 2
         }).format(value);
     };
+
+    if (loading) {
+        return (
+            <div className="dashboard-layout" style={{ justifyContent: 'center', alignItems: 'center' }}>
+                <div className="loading-spinner">Loading...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="dashboard-layout">
@@ -194,10 +203,10 @@ const Dashboard = () => {
                                         <span className="current-value">
                                             {portfolioSummary ? formatCurrency(portfolioSummary.totalValue) : '$0.00'}
                                         </span>
-                                        <span className={`change-badge ${portfolioSummary?.totalGain >= 0 ? 'positive' : 'negative'}`}>
-                                            {portfolioSummary?.totalGain >= 0 ? '+' : ''}
-                                            {portfolioSummary ? formatCurrency(portfolioSummary.totalGain) : '$0.00'}
-                                            ({portfolioSummary?.totalGainPercent?.toFixed(2) || '0.00'}%)
+                                        <span className={`change-badge ${portfolioSummary?.totalProfitLoss >= 0 ? 'positive' : 'negative'}`}>
+                                            {portfolioSummary?.totalProfitLoss >= 0 ? '+' : ''}
+                                            {portfolioSummary ? formatCurrency(portfolioSummary.totalProfitLoss) : '$0.00'}
+                                            ({portfolioSummary?.totalProfitLossPercent?.toFixed(2) || '0.00'}%)
                                         </span>
                                     </div>
                                 </div>
@@ -298,7 +307,7 @@ const Dashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {holdings.length > 0 ? (
+                                    {Array.isArray(holdings) && holdings.length > 0 ? (
                                         holdings.slice(0, 5).map((holding) => (
                                             <tr key={holding.symbol}>
                                                 <td>
@@ -310,12 +319,12 @@ const Dashboard = () => {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td>{formatCurrency(holding.averagePrice * holding.quantity)}</td>
-                                                <td>{holding.quantity}</td>
+                                                <td>{formatCurrency(holding.averageBuyPrice * holding.totalShares)}</td>
+                                                <td>{holding.totalShares}</td>
                                                 <td>{formatCurrency(holding.currentPrice)}</td>
                                                 <td>
-                                                    <span className={`status-badge ${holding.gain >= 0 ? 'success' : 'error'}`}>
-                                                        {holding.gain >= 0 ? '+' : ''}{holding.gainPercent.toFixed(2)}%
+                                                    <span className={`status-badge ${holding.profitLoss >= 0 ? 'success' : 'error'}`}>
+                                                        {holding.profitLoss >= 0 ? '+' : ''}{holding.profitLossPercent.toFixed(2)}%
                                                     </span>
                                                 </td>
                                                 <td>

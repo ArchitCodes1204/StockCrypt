@@ -398,12 +398,21 @@ body {
     outline: none;
 }
 
+/* Chart Containers */
+.chart-container {
+    width: 100%;
+    height: 300px;
+    position: relative;
+}
+
 /* Donut Chart */
 .donut-container {
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 100%;
+    height: 250px;
 }
 
 .donut-center {
