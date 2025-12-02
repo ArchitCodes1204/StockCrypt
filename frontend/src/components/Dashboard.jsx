@@ -1,14 +1,67 @@
 import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+    LayoutDashboard,
+    ArrowRightLeft,
+    Wallet,
+    Target,
+    Settings,
+    MessageSquare,
+    LogOut,
+    Search,
+    Bell,
+    ChevronDown,
+    TrendingUp,
+    TrendingDown,
+    MoreHorizontal
+} from 'lucide-react';
+import {
+    AreaChart,
+    Area,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell
+} from 'recharts';
 import AuthContext from '../context/AuthContext';
 import stockApi from '../services/stockApi';
+import portfolioApi from '../services/portfolioApi';
 import './Dashboard.css';
 
 const Dashboard = () => {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
-    const [watchlistCount, setWatchlistCount] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [holdings, setHoldings] = useState([]);
+    const [portfolioSummary, setPortfolioSummary] = useState(null);
+
+    // Mock data for the chart (replace with real historical data if available)
+    const chartData = [
+        { name: 'Jan', value: 4000 },
+        { name: 'Feb', value: 3000 },
+        { name: 'Mar', value: 5000 },
+        { name: 'Apr', value: 4500 },
+        { name: 'May', value: 6000 },
+        { name: 'Jun', value: 5500 },
+        { name: 'Jul', value: 7000 },
+        { name: 'Aug', value: 6500 },
+        { name: 'Sep', value: 8000 },
+        { name: 'Oct', value: 7500 },
+        { name: 'Nov', value: 9000 },
+        { name: 'Dec', value: 10000 },
+    ];
+
+    // Mock data for donut chart
+    const assetAllocation = [
+        { name: 'Stocks', value: 65, color: '#4318FF' },
+        { name: 'Funds', value: 20, color: '#6AD2FF' },
+        { name: 'Bonds', value: 10, color: '#EFF4FB' },
+        { name: 'Crypto', value: 5, color: '#FF0080' },
+    ];
 
     useEffect(() => {
         loadDashboardData();
@@ -18,8 +71,12 @@ const Dashboard = () => {
         try {
             const token = localStorage.getItem('token');
             if (token) {
-                const watchlist = await stockApi.getWatchlist(token);
-                setWatchlistCount(watchlist.length);
+                const [holdingsData, summaryData] = await Promise.all([
+                    portfolioApi.getHoldings(token),
+                    portfolioApi.getSummary(token)
+                ]);
+                setHoldings(holdingsData);
+                setPortfolioSummary(summaryData);
             }
         } catch (error) {
             console.error('Failed to load dashboard data:', error);
@@ -28,100 +85,259 @@ const Dashboard = () => {
         }
     };
 
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2
+        }).format(value);
+    };
+
     return (
-        <div className="dashboard-container">
-            <div className="dashboard-content">
-                <header className="dashboard-header">
-                    <h1 className="title text-blue" style={{ marginBottom: 0, textAlign: 'left' }}>StockCrypt Dashboard</h1>
-                    <button onClick={logout} className="btn-logout">
-                        Logout
-                    </button>
+        <div className="dashboard-layout">
+            {/* Sidebar */}
+            <aside className="sidebar">
+                <div className="sidebar-header">
+                    <div className="logo">
+                        <span className="logo-icon">⚡</span>
+                        <span className="logo-text">StockCrypt</span>
+                    </div>
+                </div>
+
+                <nav className="sidebar-nav">
+                    <div className="nav-section">
+                        <p className="nav-label">MENU</p>
+                        <a href="#" className="nav-item active">
+                            <LayoutDashboard size={20} />
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="#" className="nav-item" onClick={() => navigate('/portfolio')}>
+                            <Wallet size={20} />
+                            <span>Portfolio</span>
+                        </a>
+                        <a href="#" className="nav-item" onClick={() => navigate('/research')}>
+                            <ArrowRightLeft size={20} />
+                            <span>Research</span>
+                        </a>
+                        <a href="#" className="nav-item" onClick={() => navigate('/watchlist')}>
+                            <Target size={20} />
+                            <span>Watchlist</span>
+                        </a>
+                        <a href="#" className="nav-item" onClick={() => navigate('/screener')}>
+                            <TrendingUp size={20} />
+                            <span>Screener</span>
+                        </a>
+                    </div>
+
+                    <div className="nav-section">
+                        <p className="nav-label">SETTINGS</p>
+                        <a href="#" className="nav-item">
+                            <Settings size={20} />
+                            <span>Settings</span>
+                        </a>
+                        <a href="#" className="nav-item">
+                            <MessageSquare size={20} />
+                            <span>Support</span>
+                        </a>
+                        <button onClick={logout} className="nav-item logout-btn">
+                            <LogOut size={20} />
+                            <span>Log Out</span>
+                        </button>
+                    </div>
+                </nav>
+
+                <div className="pro-card">
+                    <div className="pro-icon">👑</div>
+                    <h3>Upgrade to PRO</h3>
+                    <p>Get advanced AI insights</p>
+                    <button className="btn-pro">Upgrade</button>
+                </div>
+            </aside>
+
+            {/* Main Content */}
+            <main className="main-content">
+                {/* Topbar */}
+                <header className="topbar">
+                    <div className="search-bar">
+                        <Search size={20} className="search-icon" />
+                        <input type="text" placeholder="Search stocks, news..." />
+                    </div>
+
+                    <div className="topbar-actions">
+                        <button className="icon-btn">
+                            <Bell size={20} />
+                            <span className="notification-dot"></span>
+                        </button>
+                        <div className="user-profile">
+                            <div className="avatar">
+                                {user?.username?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                            <div className="user-info">
+                                <span className="user-name">{user?.username || 'User'}</span>
+                                <span className="user-role">Free Plan</span>
+                            </div>
+                            <ChevronDown size={16} className="chevron" />
+                        </div>
+                    </div>
                 </header>
 
-                <div className="welcome-section card">
-                    <h2 className="title" style={{ fontSize: '1.5rem', textAlign: 'left' }}>Welcome, {user?.username}!</h2>
-                    <p style={{ color: 'var(--text-secondary)' }}>
-                        Your AI-powered stock analysis platform. Explore research, manage your watchlist, and compare stocks.
-                    </p>
+                {/* Dashboard Content */}
+                <div className="content-grid">
+                    {/* Stats Row */}
+                    <div className="stats-row">
+                        {/* Portfolio Value Chart */}
+                        <div className="card chart-card">
+                            <div className="card-header">
+                                <div>
+                                    <h3 className="card-title">Portfolio Value</h3>
+                                    <div className="value-display">
+                                        <span className="current-value">
+                                            {portfolioSummary ? formatCurrency(portfolioSummary.totalValue) : '$0.00'}
+                                        </span>
+                                        <span className={`change-badge ${portfolioSummary?.totalGain >= 0 ? 'positive' : 'negative'}`}>
+                                            {portfolioSummary?.totalGain >= 0 ? '+' : ''}
+                                            {portfolioSummary ? formatCurrency(portfolioSummary.totalGain) : '$0.00'}
+                                            ({portfolioSummary?.totalGainPercent?.toFixed(2) || '0.00'}%)
+                                        </span>
+                                    </div>
+                                </div>
+                                <select className="time-select">
+                                    <option>Last 12 Months</option>
+                                    <option>Last 6 Months</option>
+                                    <option>Last 30 Days</option>
+                                </select>
+                            </div>
+                            <div className="chart-container">
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <AreaChart data={chartData}>
+                                        <defs>
+                                            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#4318FF" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#4318FF" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E0E5F2" />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#A3AED0', fontSize: 12 }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#A3AED0', fontSize: 12 }} />
+                                        <Tooltip
+                                            contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0px 10px 20px rgba(0,0,0,0.1)' }}
+                                        />
+                                        <Area
+                                            type="monotone"
+                                            dataKey="value"
+                                            stroke="#4318FF"
+                                            strokeWidth={3}
+                                            fillOpacity={1}
+                                            fill="url(#colorValue)"
+                                        />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* Asset Allocation Donut */}
+                        <div className="card donut-card">
+                            <div className="card-header">
+                                <h3 className="card-title">Asset Allocation</h3>
+                                <MoreHorizontal size={20} className="more-icon" />
+                            </div>
+                            <div className="donut-container">
+                                <ResponsiveContainer width="100%" height={250}>
+                                    <PieChart>
+                                        <Pie
+                                            data={assetAllocation}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                        >
+                                            {assetAllocation.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div className="donut-center">
+                                    <span className="center-value">100%</span>
+                                    <span className="center-label">Assets</span>
+                                </div>
+                            </div>
+                            <div className="legend">
+                                {assetAllocation.map((item, index) => (
+                                    <div key={index} className="legend-item">
+                                        <span className="legend-dot" style={{ backgroundColor: item.color }}></span>
+                                        <span className="legend-name">{item.name}</span>
+                                        <span className="legend-value">{item.value}%</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Holdings Table */}
+                    <div className="card table-card">
+                        <div className="card-header">
+                            <h3 className="card-title">My Portfolio</h3>
+                            <button className="btn-view-all" onClick={() => navigate('/portfolio')}>
+                                View All
+                            </button>
+                        </div>
+                        <div className="table-responsive">
+                            <table className="portfolio-table">
+                                <thead>
+                                    <tr>
+                                        <th>Asset Name</th>
+                                        <th>Invested</th>
+                                        <th>Quantity</th>
+                                        <th>Current Price</th>
+                                        <th>Change</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {holdings.length > 0 ? (
+                                        holdings.slice(0, 5).map((holding) => (
+                                            <tr key={holding.symbol}>
+                                                <td>
+                                                    <div className="asset-info">
+                                                        <div className="asset-icon">{holding.symbol.charAt(0)}</div>
+                                                        <div>
+                                                            <div className="asset-symbol">{holding.symbol}</div>
+                                                            <div className="asset-name">Stock</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{formatCurrency(holding.averagePrice * holding.quantity)}</td>
+                                                <td>{holding.quantity}</td>
+                                                <td>{formatCurrency(holding.currentPrice)}</td>
+                                                <td>
+                                                    <span className={`status-badge ${holding.gain >= 0 ? 'success' : 'error'}`}>
+                                                        {holding.gain >= 0 ? '+' : ''}{holding.gainPercent.toFixed(2)}%
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <button className="btn-action" onClick={() => navigate(`/research?symbol=${holding.symbol}`)}>
+                                                        Analyze
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="6" className="empty-state">
+                                                No holdings found. Start investing!
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-
-                {/* Navigation Cards */}
-                <div className="nav-cards">
-                    <div className="nav-card" onClick={() => navigate('/research')}>
-                        <div className="nav-card-icon">🔍</div>
-                        <h3>Stock Research</h3>
-                        <p>Analyze any stock with AI-powered insights and recommendations</p>
-                        <button className="btn-primary">Start Research</button>
-                    </div>
-
-                    <div className="nav-card" onClick={() => navigate('/portfolio')}>
-                        <div className="nav-card-icon">💼</div>
-                        <h3>My Portfolio</h3>
-                        <p>Track your investments, view P&L, and manage transactions</p>
-                        <button className="btn-primary">View Portfolio</button>
-                    </div>
-
-                    <div className="nav-card" onClick={() => navigate('/watchlist')}>
-                        <div className="nav-card-icon">⭐</div>
-                        <h3>My Watchlist</h3>
-                        <p>Monitor your favorite stocks with auto-updating ratings</p>
-                        <div className="watchlist-badge">{watchlistCount} Stocks</div>
-                        <button className="btn-primary">View Watchlist</button>
-                    </div>
-
-                    <div className="nav-card" onClick={() => navigate('/insights')}>
-                        <div className="nav-card-icon">📊</div>
-                        <h3>Stock Insights</h3>
-                        <p>Compare stocks side-by-side to make informed decisions</p>
-                        <button className="btn-primary">Compare Stocks</button>
-                    </div>
-
-                    <div className="nav-card" onClick={() => navigate('/screener')}>
-                        <div className="nav-card-icon">⚡</div>
-                        <h3>Stock Screener</h3>
-                        <p>Filter and find top performing stocks with real-time data</p>
-                        <button className="btn-primary">Open Screener</button>
-                    </div>
-                </div>
-
-                {/* Features Overview */}
-                <div className="features-section">
-                    <h2 className="section-title">What You Get</h2>
-                    <div className="features-grid">
-                        <div className="feature-item">
-                            <div className="feature-icon">✅</div>
-                            <h4>Buy/Hold/Sell Recommendations</h4>
-                            <p>AI-driven decisions with confidence levels</p>
-                        </div>
-                        <div className="feature-item">
-                            <div className="feature-icon">📈</div>
-                            <h4>Performance Analysis</h4>
-                            <p>1-year historical data with volatility insights</p>
-                        </div>
-                        <div className="feature-item">
-                            <div className="feature-icon">⚠️</div>
-                            <h4>Risk Assessment</h4>
-                            <p>1-10 risk scoring based on market conditions</p>
-                        </div>
-                        <div className="feature-item">
-                            <div className="feature-icon">🔮</div>
-                            <h4>Growth Forecasts</h4>
-                            <p>Short and long-term predictions</p>
-                        </div>
-                        <div className="feature-item">
-                            <div className="feature-icon">💡</div>
-                            <h4>Investment Suitability</h4>
-                            <p>Tailored for your investor profile</p>
-                        </div>
-                        <div className="feature-item">
-                            <div className="feature-icon">📰</div>
-                            <h4>Sentiment Analysis</h4>
-                            <p>Market sentiment and news insights</p>
-                        </div>
-                    </div>
-                </div
-                >
-            </div>
+            </main>
         </div>
     );
 };
