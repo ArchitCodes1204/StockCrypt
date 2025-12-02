@@ -51,10 +51,6 @@ const transactionSchema = new mongoose.Schema({
 transactionSchema.index({ userId: 1, symbol: 1 });
 transactionSchema.index({ userId: 1, transactionDate: -1 });
 
-// Calculate total amount before saving
-transactionSchema.pre('save', function (next) {
-    this.totalAmount = this.quantity * this.pricePerShare;
-    next();
-});
+
 
 module.exports = mongoose.model('Transaction', transactionSchema);

@@ -252,34 +252,53 @@ class StockAnalysisService {
     }
 
     async compareStocks(symbol1, symbol2) {
-        const [stock1, stock2] = await Promise.all([
-            this.analyzeStock(symbol1),
-            this.analyzeStock(symbol2)
-        ]);
+        try {
+            const [stock1, stock2] = await Promise.all([
+                this.analyzeStock(symbol1),
+                this.analyzeStock(symbol2)
+            ]);
 
-        return {
-            stock1,
-            stock2,
-            comparison: {
-                performance: {
-                    winner: parseFloat(stock1.yearPerformance.percentChange) > parseFloat(stock2.yearPerformance.percentChange)
-                        ? stock1.symbol : stock2.symbol,
-                    difference: Math.abs(
-                        parseFloat(stock1.yearPerformance.percentChange) - parseFloat(stock2.yearPerformance.percentChange)
-                    ).toFixed(2) + '%'
-                },
-                risk: {
-                    lowerRisk: stock1.riskScore.score < stock2.riskScore.score ? stock1.symbol : stock2.symbol,
-                    scoreDifference: Math.abs(stock1.riskScore.score - stock2.riskScore.score)
-                },
-                recommendation: {
-                    stronger: stock1.recommendation.decision === 'BUY' && stock2.recommendation.decision !== 'BUY'
-                        ? stock1.symbol :
-                        stock2.recommendation.decision === 'BUY' && stock1.recommendation.decision !== 'BUY'
-                            ? stock2.symbol : 'Equal'
+            const getPercentChange = (stock) => {
+                return stock.yearPerformance && stock.yearPerformance.percentChange
+                    ? parseFloat(stock.yearPerformance.percentChange)
+                    : 0;
+            };
+
+            const getRiskScore = (stock) => {
+                return stock.riskScore && stock.riskScore.score ? stock.riskScore.score : 5;
+            };
+
+            const getRecommendation = (stock) => {
+                return stock.recommendation && stock.recommendation.decision ? stock.recommendation.decision : 'HOLD';
+            };
+
+            return {
+                stock1,
+                stock2,
+                comparison: {
+                    performance: {
+                        winner: getPercentChange(stock1) > getPercentChange(stock2)
+                            ? stock1.symbol : stock2.symbol,
+                        difference: Math.abs(
+                            getPercentChange(stock1) - getPercentChange(stock2)
+                        ).toFixed(2) + '%'
+                    },
+                    risk: {
+                        lowerRisk: getRiskScore(stock1) < getRiskScore(stock2) ? stock1.symbol : stock2.symbol,
+                        scoreDifference: Math.abs(getRiskScore(stock1) - getRiskScore(stock2))
+                    },
+                    recommendation: {
+                        stronger: getRecommendation(stock1) === 'BUY' && getRecommendation(stock2) !== 'BUY'
+                            ? stock1.symbol :
+                            getRecommendation(stock2) === 'BUY' && getRecommendation(stock1) !== 'BUY'
+                                ? stock2.symbol : 'Equal'
+                    }
                 }
-            }
-        };
+            };
+        } catch (error) {
+            console.error('Comparison error:', error);
+            throw new Error('Failed to compare stocks. Please check the symbols and try again.');
+        }
     }
 }
 

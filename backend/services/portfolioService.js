@@ -9,6 +9,16 @@ class PortfolioService {
     async processTransaction(userId, transactionData) {
         const { symbol, type, quantity, pricePerShare, transactionDate, notes } = transactionData;
 
+        // Validate SELL transaction before creating the transaction
+        if (type === 'SELL') {
+            const portfolio = await Portfolio.findOne({ userId, symbol: symbol.toUpperCase() });
+            const currentShares = portfolio ? portfolio.totalShares : 0;
+
+            if (currentShares < quantity) {
+                throw new Error(`Insufficient shares. You own ${currentShares} shares of ${symbol}, cannot sell ${quantity}.`);
+            }
+        }
+
         // Create transaction record
         const transaction = new Transaction({
             userId,
@@ -16,6 +26,7 @@ class PortfolioService {
             type,
             quantity,
             pricePerShare,
+            totalAmount: quantity * pricePerShare,
             transactionDate: transactionDate || new Date(),
             notes
         });

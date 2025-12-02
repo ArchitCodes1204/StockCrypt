@@ -72,6 +72,17 @@ const Portfolio = () => {
         }
     };
 
+    const handleDeleteHolding = async (symbol) => {
+        if (window.confirm(`Are you sure you want to delete all holdings and transactions for ${symbol}? This cannot be undone.`)) {
+            try {
+                await portfolioApi.deleteHoldings(symbol, token);
+                fetchPortfolioData();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+    };
+
     if (loading) {
         return (
             <div className="portfolio-container">
@@ -153,6 +164,14 @@ const Portfolio = () => {
                                                     onClick={() => handleRefresh(holding.symbol)}
                                                 >
                                                     🔄
+                                                </button>
+                                                <button
+                                                    className="btn-small btn-delete-holding"
+                                                    onClick={() => handleDeleteHolding(holding.symbol)}
+                                                    title="Delete Holding"
+                                                    style={{ marginLeft: '8px', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444' }}
+                                                >
+                                                    🗑️
                                                 </button>
                                             </td>
                                         </tr>
