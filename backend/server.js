@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://stock-crypt-theta.vercel.app'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5177', 'https://stock-crypt-theta.vercel.app'],
     credentials: true
 }));
 
@@ -21,6 +21,8 @@ connectDB();
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/stock', require('./routes/stock'));
+app.use('/api/portfolio', require('./routes/portfolio'));
 
 app.get('/', (req, res) => {
     res.send('StockCrypt Backend Running');
