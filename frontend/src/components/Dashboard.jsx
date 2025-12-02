@@ -38,6 +38,8 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [holdings, setHoldings] = useState([]);
     const [portfolioSummary, setPortfolioSummary] = useState(null);
+    const [showAllHoldings, setShowAllHoldings] = useState(false);
+    const [sortConfig, setSortConfig] = useState({ key: 'symbol', direction: 'asc' });
 
     // Mock data for the chart (replace with real historical data if available)
     const chartData = [
@@ -92,6 +94,30 @@ const Dashboard = () => {
             currency: 'USD',
             minimumFractionDigits: 2
         }).format(value);
+    };
+
+    const handleSort = (key) => {
+        setSortConfig(prev => ({
+            key,
+            direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+        }));
+    };
+
+    const getSortedHoldings = () => {
+        if (!Array.isArray(holdings)) return [];
+        const sorted = [...holdings].sort((a, b) => {
+            let aVal = a[sortConfig.key];
+            let bVal = b[sortConfig.key];
+
+            if (sortConfig.key === 'symbol') {
+                return sortConfig.direction === 'asc'
+                    ? aVal.localeCompare(bVal)
+                    : bVal.localeCompare(aVal);
+            }
+
+            return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+        });
+        return showAllHoldings ? sorted : sorted.slice(0, 5);
     };
 
     if (loading) {
@@ -154,13 +180,6 @@ const Dashboard = () => {
                         </button>
                     </div>
                 </nav>
-
-                <div className="pro-card">
-                    <div className="pro-icon">👑</div>
-                    <h3>Upgrade to PRO</h3>
-                    <p>Get advanced AI insights</p>
-                    <button className="btn-pro">Upgrade</button>
-                </div>
             </aside>
 
             {/* Main Content */}
@@ -290,25 +309,35 @@ const Dashboard = () => {
                     <div className="card table-card">
                         <div className="card-header">
                             <h3 className="card-title">My Portfolio</h3>
-                            <button className="btn-view-all" onClick={() => navigate('/portfolio')}>
-                                View All
+                            <button className="btn-view-all" onClick={() => setShowAllHoldings(!showAllHoldings)}>
+                                {showAllHoldings ? 'Show Less' : `View All (${holdings.length})`}
                             </button>
                         </div>
                         <div className="table-responsive">
                             <table className="portfolio-table">
                                 <thead>
                                     <tr>
-                                        <th>Asset Name</th>
-                                        <th>Invested</th>
-                                        <th>Quantity</th>
-                                        <th>Current Price</th>
-                                        <th>Change</th>
+                                        <th onClick={() => handleSort('symbol')} style={{ cursor: 'pointer' }}>
+                                            Asset Name {sortConfig.key === 'symbol' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                        </th>
+                                        <th onClick={() => handleSort('totalInvested')} style={{ cursor: 'pointer' }}>
+                                            Invested {sortConfig.key === 'totalInvested' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                        </th>
+                                        <th onClick={() => handleSort('totalShares')} style={{ cursor: 'pointer' }}>
+                                            Quantity {sortConfig.key === 'totalShares' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                        </th>
+                                        <th onClick={() => handleSort('currentPrice')} style={{ cursor: 'pointer' }}>
+                                            Current Price {sortConfig.key === 'currentPrice' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                        </th>
+                                        <th onClick={() => handleSort('profitLossPercent')} style={{ cursor: 'pointer' }}>
+                                            Change {sortConfig.key === 'profitLossPercent' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                        </th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {Array.isArray(holdings) && holdings.length > 0 ? (
-                                        holdings.slice(0, 5).map((holding) => (
+                                    {getSortedHoldings().length > 0 ? (
+                                        getSortedHoldings().map((holding) => (
                                             <tr key={holding.symbol}>
                                                 <td>
                                                     <div className="asset-info">
