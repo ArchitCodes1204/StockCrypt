@@ -19,14 +19,16 @@ const corsOptions = {
             'http://localhost:5173',
             'http://localhost:5174',
             'http://localhost:5175',
+            'http://localhost:5176',
             'http://localhost:5177'
         ];
 
-        // Allow all Vercel deployments (*.vercel.app)
+        // Allow all Vercel deployments (*.vercel.app) and any localhost port
         const isVercelDomain = origin && origin.endsWith('.vercel.app');
+        const isLocalhost = origin && origin.startsWith('http://localhost:');
 
-        // Allow if origin is in allowedOrigins or is a Vercel domain or is undefined (for non-browser requests)
-        if (!origin || allowedOrigins.includes(origin) || isVercelDomain) {
+        // Allow if origin is in allowedOrigins or is a Vercel domain or is localhost or is undefined
+        if (!origin || allowedOrigins.includes(origin) || isVercelDomain || isLocalhost) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
