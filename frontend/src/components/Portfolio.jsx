@@ -1,10 +1,12 @@
 import { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import portfolioApi from '../services/portfolioApi';
 import './Portfolio.css';
 
 const Portfolio = () => {
     const { token } = useContext(AuthContext);
+    const navigate = useNavigate();
     const [holdings, setHoldings] = useState([]);
     const [summary, setSummary] = useState(null);
     const [transactions, setTransactions] = useState([]);
@@ -98,7 +100,12 @@ const Portfolio = () => {
         <div className="portfolio-container">
             <div className="portfolio-content">
                 <div className="portfolio-header">
-                    <h1 className="title">💼 My Portfolio</h1>
+                    <div className="header-left">
+                        <button className="btn-back" onClick={() => navigate('/dashboard')}>
+                            ← Back to Dashboard
+                        </button>
+                        <h1 className="title">💼 My Portfolio</h1>
+                    </div>
                     <button className="btn-primary" onClick={() => setShowAddModal(true)}>
                         + Add Transaction
                     </button>
