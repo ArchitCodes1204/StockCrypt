@@ -68,9 +68,33 @@
 }
 
 .research-header {
-    text-align: center;
     margin-bottom: 3rem;
     animation: fadeInDown 0.8s ease-out;
+}
+
+.header-left-research {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+.btn-back-research {
+    padding: 0.75rem 1.5rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #6366f1;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.btn-back-research:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: #6366f1;
+    transform: translateX(-3px);
 }
 
 @keyframes fadeInDown {

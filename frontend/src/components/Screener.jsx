@@ -89,9 +89,14 @@ const Screener = () => {
         <div className="screener-container">
             <div className="screener-content">
                 <div className="screener-header">
-                    <div>
-                        <h1 className="title">🔍 Stock Screener</h1>
-                        <p className="subtitle">Real-time market data for top companies</p>
+                    <div className="header-left-screener">
+                        <button className="btn-back-screener" onClick={() => navigate('/dashboard')}>
+                            ← Back to Dashboard
+                        </button>
+                        <div>
+                            <h1 className="title">🔍 Stock Screener</h1>
+                            <p className="subtitle">Real-time market data for top companies</p>
+                        </div>
                     </div>
                     <div className="screener-controls">
                         <input

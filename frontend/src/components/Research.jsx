@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import stockApi from '../services/stockApi';
 import StockAnalysis from './StockAnalysis';
 import './Research.css';
 
 const Research = () => {
+    const navigate = useNavigate();
     const [symbol, setSymbol] = useState('');
     const [analysis, setAnalysis] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -35,8 +37,15 @@ const Research = () => {
         <div className="research-container">
             <div className="research-content">
                 <header className="research-header">
-                    <h1 className="title text-blue">📊 Stock Research</h1>
-                    <p className="subtitle">AI-Powered Stock Analysis & Insights</p>
+                    <div className="header-left-research">
+                        <button className="btn-back-research" onClick={() => navigate('/dashboard')}>
+                            ← Back to Dashboard
+                        </button>
+                        <div>
+                            <h1 className="title text-blue">📊 Stock Research</h1>
+                            <p className="subtitle">AI-Powered Stock Analysis & Insights</p>
+                        </div>
+                    </div>
                 </header>
 
                 <div className="search-section">
