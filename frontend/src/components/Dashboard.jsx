@@ -7,29 +7,38 @@ import {
     Target,
     Settings,
     MessageSquare,
-    LogOut,
-    Search,
     Bell,
-    ChevronDown,
+    Search,
+    User,
+    LogOut,
+    Briefcase,
+    Eye,
+    Filter,
+    HelpCircle,
+    Menu,
+    X,
     TrendingUp,
     TrendingDown,
-    MoreHorizontal
+    MoreHorizontal,
+    ChevronDown
 } from 'lucide-react';
 import {
-    AreaChart,
-    Area,
+    LineChart,
+    Line,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
+    AreaChart,
+    Area,
     PieChart,
     Pie,
     Cell
 } from 'recharts';
 import AuthContext from '../context/AuthContext';
-import stockApi from '../services/stockApi';
 import portfolioApi from '../services/portfolioApi';
+import logo from '../assets/logo.png';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -134,7 +143,7 @@ const Dashboard = () => {
             <aside className="sidebar">
                 <div className="sidebar-header">
                     <div className="logo">
-                        <span className="logo-icon">⚡</span>
+                        <img src={logo} alt="StockCrypt" className="logo-image" />
                         <span className="logo-text">StockCrypt</span>
                     </div>
                 </div>

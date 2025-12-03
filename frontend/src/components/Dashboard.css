@@ -57,8 +57,10 @@ body {
     color: var(--text-primary);
 }
 
-.logo-icon {
-    color: var(--accent-color);
+.logo-image {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
 }
 
 .nav-section {
