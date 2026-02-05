@@ -107,7 +107,7 @@
   /* blue-400 */
 }
 
-.link-text a:hoverrr {
+.link-text a:hover {
   text-decoration: underline;
 }
 
