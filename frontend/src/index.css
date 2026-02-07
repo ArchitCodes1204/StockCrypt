@@ -36,7 +36,7 @@ body {
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-    width: 100px;
+    width: 10px;
     height: 10px;
 }
 
