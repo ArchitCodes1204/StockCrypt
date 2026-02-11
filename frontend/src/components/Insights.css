@@ -22,7 +22,7 @@
 .compare-section {
     background: var(--bg-secondary, #1a1a2e);
     padding: 2rem;
-    border-radius: 16px;
+    border-radius: 18px;
     margin-bottom: 2rem;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
