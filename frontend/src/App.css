@@ -2,7 +2,7 @@
 .container {
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: cen;
   justify-content: center;
   padding: 1rem;
 }
