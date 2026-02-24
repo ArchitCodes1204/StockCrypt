@@ -57,7 +57,7 @@ module.exports = app;
 
 // Only run the server if not in Vercel environment (Vercel handles this)
 if (require.main === module) {
-    app.listen(PORT, () => {
+    app.listen(PORT, (.) => {
         console.log(`Server running on port ${PORT}`);
     });
 }
