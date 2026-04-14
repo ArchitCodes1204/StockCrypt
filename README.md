@@ -25,7 +25,7 @@ StockCrypt is an AI-powered stock analysis platform that provides:
 
 ---
 
-## ✅ Evaluation Checklist
+##  Evaluation Checklist
 
 ### 1. Backend CRUD Operations (Non-Auth)
 
