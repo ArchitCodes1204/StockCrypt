@@ -4,7 +4,7 @@
 
 ---
 
-## 📋 Project Proposal
+## Project Proposal
 
 ### Problem Statement
 Individual investors struggle to make informed stock investment decisions due to:
