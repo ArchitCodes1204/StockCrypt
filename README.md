@@ -61,9 +61,9 @@ StockCrypt is an AI-powered stock analysis platform that provides:
 -  Can sort by recommendation, risk score, performance
 
 #### Filtering
-- ✅ Filter stocks by recommendation (BUY/HOLD/SELL)
-- ✅ Filter by risk level (Low/Moderate/High)
-- ✅ Filter by performance (positive/negative)
+-  Filter stocks by recommendation (BUY/HOLD/SELL)
+-  Filter by risk level (Low/Moderate/High)
+-  Filter by performance (positive/negative)
 
 ### 3. Hosting Verification
 
