@@ -1,6 +1,6 @@
 # StockCrypt - AI-Powered Stock Analysis Platform
 
-**Hosted Frontend URL:** [Coming Soon - Deploy to Vercel]
+**Hosted Frontend URL:** [Coming Soon - Deploy to Verc
 
 ---
 
