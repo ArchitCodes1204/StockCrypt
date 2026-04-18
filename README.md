@@ -1,8 +1,6 @@
 # StockCrypt - AI-Powered Stock Analysis Platform
 
-**Hosted Frontend URL:** [
 
----
 
 ## Project Proposal
 
@@ -37,7 +35,7 @@ StockCrypt is an AI-powered stock analysis platform that provides:
 #### READ Operations (2+)
 - ✅ **GET `/api/stock/watchlist`** - Read user's watchlist
 - ✅ **GET `/api/stock/trending`** - Read trending stocks
-- ✅ **POST `/api/stock/analyze`** - Read stock analysis data
+-  **POST `/api/stock/analyze`** - Read stock analysis data
 
 #### UPDATE Operations (2+)
 - ✅ **PUT `/api/stock/watchlist/:symbol/refresh`** - Update/refresh stock analysis
