@@ -43,7 +43,7 @@ StockCrypt is an AI-powered stock analysis platform that provides:
 
 #### DELETE Operations (2+)
 -  **DELETE `/api/stock/watchlist/:symbol`** - Remove stock from watchlist
-- ✅ Cache invalidation on stock updates
+- Cache invalidation on stock updates
 
 ### 2. Advanced Features
 
