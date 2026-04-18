@@ -48,8 +48,8 @@ StockCrypt is an AI-powered stock analysis platform that provides:
 ### 2. Advanced Features
 
 #### Pagination
-- ✅ Watchlist supports pagination (limit/offset parameters)
-- ✅ Historical data pagination (1-year data in chunks)
+-  Watchlist supports pagination (limit/offset parameters)
+-  Historical data pagination (1-year data in chunks)
 
 #### Searching
 - ✅ Stock symbol search in Research page
