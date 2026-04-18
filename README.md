@@ -38,7 +38,7 @@ StockCrypt is an AI-powered stock analysis platform that provides:
 -  **POST `/api/stock/analyze`** - Read stock analysis data
 
 #### UPDATE Operations (2+)
-- ✅ **PUT `/api/stock/watchlist/:symbol/refresh`** - Update/refresh stock analysis
+-  **PUT `/api/stock/watchlist/:symbol/refresh`** - Update/refresh stock analysis
 -  **POST `/api/stock/watchlist`** - Update watchlist with notes
 
 #### DELETE Operations (2+)
