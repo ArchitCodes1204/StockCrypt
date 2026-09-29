@@ -55,6 +55,45 @@ class PortfolioService {
             });
         }
 
+        this.applyTransaction(portfolio, type, quantity, pricePerShare);
+
+        await this.refreshMetrics(portfolio, symbol);
+        await portfolio.save();
+        return portfolio;
+    }
+
+    /**
+     * Rebuild a holding from scratch by replaying all of its transactions.
+     * Used after a transaction is edited or deleted.
+     */
+    async recalculatePortfolio(userId, symbol) {
+        symbol = symbol.toUpperCase();
+        const transactions = await Transaction.find({ userId, symbol }).sort({ transactionDate: 1, createdAt: 1 });
+
+        if (transactions.length === 0) {
+            await Portfolio.deleteOne({ userId, symbol });
+            return null;
+        }
+
+        let portfolio = await Portfolio.findOne({ userId, symbol });
+        if (!portfolio) {
+            portfolio = new Portfolio({ userId, symbol });
+        }
+        portfolio.totalShares = 0;
+        portfolio.averageBuyPrice = 0;
+        portfolio.totalInvested = 0;
+
+        transactions.forEach(t => this.applyTransaction(portfolio, t.type, t.quantity, t.pricePerShare));
+
+        await this.refreshMetrics(portfolio, symbol);
+        await portfolio.save();
+        return portfolio;
+    }
+
+    /**
+     * Apply a single BUY/SELL to a holding's share count and cost basis
+     */
+    applyTransaction(portfolio, type, quantity, pricePerShare) {
         if (type === 'BUY') {
             // Calculate new average buy price
             const newTotalInvested = portfolio.totalInvested + (quantity * pricePerShare);
@@ -75,8 +114,12 @@ class PortfolioService {
                 portfolio.totalInvested = portfolio.totalShares * portfolio.averageBuyPrice;
             }
         }
+    }
 
-        // Get current price and calculate metrics
+    /**
+     * Update a holding's current price, value and P/L
+     */
+    async refreshMetrics(portfolio, symbol) {
         try {
             const analysis = await stockService.analyzeStock(symbol);
             const currentPrice = parseFloat(analysis.currentMarketStatus.currentPrice);
@@ -86,9 +129,6 @@ class PortfolioService {
             // Use last known price or average buy price
             portfolio.calculateMetrics(portfolio.currentPrice || portfolio.averageBuyPrice);
         }
-
-        await portfolio.save();
-        return portfolio;
     }
 
     /**
@@ -252,14 +292,9 @@ class PortfolioService {
             throw new Error('Transaction not found');
         }
 
-        const { symbol, type, quantity, pricePerShare } = transaction;
-
-        // Delete the transaction
+        // Delete the transaction and rebuild the holding from what's left
         await Transaction.deleteOne({ _id: transactionId });
-
-        // Reverse the transaction effect on portfolio
-        const reverseType = type === 'BUY' ? 'SELL' : 'BUY';
-        await this.updatePortfolio(userId, symbol, reverseType, quantity, pricePerShare);
+        await this.recalculatePortfolio(userId, transaction.symbol);
 
         return { message: 'Transaction deleted successfully' };
     }

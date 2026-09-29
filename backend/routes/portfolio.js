@@ -158,14 +158,8 @@ router.put('/transaction/:id', authMiddleware, async (req, res) => {
 
         await transaction.save();
 
-        // Recalculate portfolio
-        await portfolioService.updatePortfolio(
-            req.user.userId,
-            transaction.symbol,
-            transaction.type,
-            0, // No change in quantity for update
-            transaction.pricePerShare
-        );
+        // Recalculate portfolio from all transactions for this symbol
+        await portfolioService.recalculatePortfolio(req.user.userId, transaction.symbol);
 
         res.json(transaction);
     } catch (error) {
