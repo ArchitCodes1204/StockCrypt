@@ -1,26 +1,17 @@
 import { useContext } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
+import { SplashScreen } from './layout/SplashScreen';
 
+/** Login/signup wrapper: signed-in users are sent to the dashboard. */
 const PublicRoute = ({ children }) => {
     const { token, loading } = useContext(AuthContext);
 
-    if (loading) {
-        return (
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100vh',
-                background: '#000',
-                color: '#fff'
-            }}>
-                Loading...
-            </div>
-        );
-    }
+    if (loading) return <SplashScreen />;
 
-    return !token ? children : <Navigate to="/dashboard" />;
+    if (token) return <Navigate to="/dashboard" replace />;
+
+    return children ?? <Outlet />;
 };
 
 export default PublicRoute;
