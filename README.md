@@ -196,16 +196,21 @@ npm install
 
 Create `.env` file:
 ```env
-MONGODB_URI=your_mongodb_connection_string
+MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
 PORT=5001
-FINNHUB_API_KEY=your_finnhub_key (optional - demo key included)
+TWELVE_DATA_API_KEY=your_twelvedata_key   # optional - Yahoo Finance is used as a fallback
 ```
 
 Run backend:
 ```bash
-npm run dev
+npm run dev         # uses MONGO_URI from .env
+npm run dev:local   # no Atlas needed: starts an in-memory MongoDB (data resets on restart)
 ```
+
+> If the backend logs `querySrv ENOTFOUND ...mongodb.net`, the Atlas cluster in `MONGO_URI`
+> no longer exists (free clusters are removed after long inactivity). Create a new cluster and
+> update `MONGO_URI`, or use `npm run dev:local`.
 
 ### Frontend Setup
 ```bash
