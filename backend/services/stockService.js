@@ -65,21 +65,57 @@ class StockAnalysisService {
     }
 
     /**
+     * Fetch a quote from TwelveData, falling back to Yahoo Finance.
+     * The TwelveData 'demo' key only serves a handful of symbols (e.g. AAPL),
+     * so without a real key most lookups go through Yahoo.
+     * Returns a TwelveData-shaped quote object.
+     */
+    async fetchQuote(symbol) {
+        try {
+            const url = `${TWELVE_DATA_BASE}/quote?symbol=${encodeURIComponent(symbol)}&apikey=${TWELVE_DATA_KEY}`;
+            const response = await axios.get(url, { timeout: 10000 });
+            if (response.data && response.data.close) return response.data;
+        } catch (error) {
+            console.warn(`TwelveData quote failed for ${symbol}:`, error.message);
+        }
+
+        try {
+            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=1d`;
+            const response = await axios.get(url, {
+                timeout: 10000,
+                headers: { 'User-Agent': 'Mozilla/5.0' }
+            });
+            const meta = response.data?.chart?.result?.[0]?.meta;
+            if (meta && meta.regularMarketPrice) {
+                const previousClose = meta.previousClose ?? meta.chartPreviousClose ?? meta.regularMarketPrice;
+                const change = meta.regularMarketPrice - previousClose;
+                return {
+                    name: meta.longName || meta.shortName || symbol,
+                    close: meta.regularMarketPrice,
+                    change,
+                    percent_change: previousClose ? (change / previousClose) * 100 : 0,
+                    volume: meta.regularMarketVolume,
+                    datetime: new Date(meta.regularMarketTime * 1000).toISOString().split('T')[0]
+                };
+            }
+        } catch (error) {
+            console.warn(`Yahoo quote failed for ${symbol}:`, error.message);
+        }
+
+        throw new Error('Invalid stock symbol or no data available');
+    }
+
+    /**
      * Analyze a single stock
      */
     async analyzeStock(symbol) {
         try {
+            symbol = symbol.trim().toUpperCase();
             const cacheKey = `analysis_${symbol}`;
             const cached = cache.get(cacheKey);
             if (cached) return cached;
 
-            const url = `${TWELVE_DATA_BASE}/quote?symbol=${symbol}&apikey=${TWELVE_DATA_KEY}`;
-            const response = await axios.get(url);
-            const quote = response.data;
-
-            if (!quote || !quote.close) {
-                throw new Error('Invalid stock symbol or no data available');
-            }
+            const quote = await this.fetchQuote(symbol);
 
             const currentPrice = parseFloat(quote.close);
             const change = parseFloat(quote.change) || 0;
