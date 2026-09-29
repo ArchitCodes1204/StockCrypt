@@ -1,15 +1,41 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import stockApi from '../services/stockApi';
 import StockAnalysis from './StockAnalysis';
 import './Research.css';
 
 const Research = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [symbol, setSymbol] = useState('');
     const [analysis, setAnalysis] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const runAnalysis = async (target) => {
+        setLoading(true);
+        setError('');
+        setAnalysis(null);
+
+        try {
+            const result = await stockApi.analyzeStock(target);
+            setAnalysis(result);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Auto-analyze when opened from the Screener (router state) or Dashboard (?symbol=)
+    useEffect(() => {
+        const incoming = location.state?.symbol || new URLSearchParams(location.search).get('symbol');
+        if (incoming) {
+            setSymbol(incoming.toUpperCase());
+            runAnalysis(incoming);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.key]);
 
     const handleAnalyze = async (e) => {
         e.preventDefault();
@@ -19,19 +45,11 @@ const Research = () => {
             return;
         }
 
-        setLoading(true);
-        setError('');
-        setAnalysis(null);
-
-        try {
-            const result = await stockApi.analyzeStock(symbol);
-            setAnalysis(result);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+        runAnalysis(symbol);
     };
+
+    const handleAddToWatchlist = () =>
+        stockApi.addToWatchlist(analysis.symbol, '', localStorage.getItem('token'));
 
     return (
         <div className="research-container">
@@ -119,6 +137,7 @@ const Research = () => {
                 <StockAnalysis
                     analysis={analysis}
                     onClose={() => setAnalysis(null)}
+                    onAddToWatchlist={handleAddToWatchlist}
                 />
             )}
         </div>

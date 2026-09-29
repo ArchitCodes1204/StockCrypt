@@ -1,10 +1,12 @@
 import { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import stockApi from '../services/stockApi';
 import StockAnalysis from './StockAnalysis';
 import './Watchlist.css';
 
 const Watchlist = () => {
+    const navigate = useNavigate();
     const { user } = useContext(AuthContext);
     const [watchlist, setWatchlist] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -99,6 +101,9 @@ const Watchlist = () => {
         <div className="watchlist-container">
             <div className="watchlist-content">
                 <header className="watchlist-header">
+                    <button className="btn-back-watchlist" onClick={() => navigate('/dashboard')}>
+                        ← Back to Dashboard
+                    </button>
                     <h1 className="title text-blue">⭐ My Watchlist</h1>
                     <p className="subtitle">Track your favorite stocks with live ratings</p>
                 </header>

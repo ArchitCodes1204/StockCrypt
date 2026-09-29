@@ -2,8 +2,20 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import './StockAnalysis.css';
 
-const StockAnalysis = ({ analysis, onClose }) => {
+const StockAnalysis = ({ analysis, onClose, onAddToWatchlist }) => {
+    const [watchlistStatus, setWatchlistStatus] = useState('idle');
+
     if (!analysis) return null;
+
+    const handleAddToWatchlist = async () => {
+        setWatchlistStatus('adding');
+        try {
+            await onAddToWatchlist();
+            setWatchlistStatus('added');
+        } catch {
+            setWatchlistStatus('error');
+        }
+    };
 
     const getRecommendationClass = (decision) => {
         switch (decision) {
@@ -61,6 +73,18 @@ const StockAnalysis = ({ analysis, onClose }) => {
                 <div className="analysis-header">
                     <h1>{analysis.symbol}</h1>
                     <p className="company-name">{analysis.companyOverview.name}</p>
+                    {onAddToWatchlist && (
+                        <button
+                            className="watchlist-add-btn"
+                            onClick={handleAddToWatchlist}
+                            disabled={watchlistStatus === 'adding' || watchlistStatus === 'added'}
+                        >
+                            {watchlistStatus === 'idle' && '⭐ Add to Watchlist'}
+                            {watchlistStatus === 'adding' && 'Adding...'}
+                            {watchlistStatus === 'added' && '✓ In Watchlist'}
+                            {watchlistStatus === 'error' && 'Failed — Try Again'}
+                        </button>
+                    )}
                 </div>
 
                 {/* Company Overview */}
@@ -272,7 +296,8 @@ const StockAnalysis = ({ analysis, onClose }) => {
 
 StockAnalysis.propTypes = {
     analysis: PropTypes.object,
-    onClose: PropTypes.func
+    onClose: PropTypes.func,
+    onAddToWatchlist: PropTypes.func
 };
 
 export default StockAnalysis;

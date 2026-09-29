@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import stockApi from '../services/stockApi';
 import './Insights.css';
 
 const Insights = () => {
+    const navigate = useNavigate();
     const [symbol1, setSymbol1] = useState('');
     const [symbol2, setSymbol2] = useState('');
     const [comparison, setComparison] = useState(null);
@@ -108,6 +110,9 @@ const Insights = () => {
         <div className="insights-container">
             <div className="insights-content">
                 <header className="insights-header">
+                    <button className="btn-back-insights" onClick={() => navigate('/dashboard')}>
+                        ← Back to Dashboard
+                    </button>
                     <h1 className="title text-blue">🔍 Stock Insights</h1>
                     <p className="subtitle">Compare Two Stocks Side-by-Side</p>
                 </header>

@@ -151,25 +151,29 @@ const Dashboard = () => {
                 <nav className="sidebar-nav">
                     <div className="nav-section">
                         <p className="nav-label">MENU</p>
-                        <a href="#" className="nav-item active">
+                        <a href="#" className="nav-item active" onClick={(e) => e.preventDefault()}>
                             <LayoutDashboard size={20} />
                             <span>Dashboard</span>
                         </a>
-                        <a href="#" className="nav-item" onClick={() => navigate('/portfolio')}>
+                        <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate('/portfolio'); }}>
                             <Wallet size={20} />
                             <span>Portfolio</span>
                         </a>
-                        <a href="#" className="nav-item" onClick={() => navigate('/research')}>
+                        <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate('/research'); }}>
                             <ArrowRightLeft size={20} />
                             <span>Research</span>
                         </a>
-                        <a href="#" className="nav-item" onClick={() => navigate('/watchlist')}>
+                        <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate('/watchlist'); }}>
                             <Target size={20} />
                             <span>Watchlist</span>
                         </a>
-                        <a href="#" className="nav-item" onClick={() => navigate('/screener')}>
+                        <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate('/screener'); }}>
                             <TrendingUp size={20} />
                             <span>Screener</span>
+                        </a>
+                        <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate('/insights'); }}>
+                            <Eye size={20} />
+                            <span>Compare</span>
                         </a>
                     </div>
 
