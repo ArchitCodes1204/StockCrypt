@@ -53,7 +53,7 @@ router.post('/compare', async (req, res) => {
  */
 router.get('/watchlist', authMiddleware, async (req, res) => {
     try {
-        const stocks = await Stock.find({ userId: req.user.id })
+        const stocks = await Stock.find({ userId: req.user.userId })
             .sort({ addedAt: -1 });
 
         res.json(stocks);
@@ -81,9 +81,9 @@ router.post('/watchlist', authMiddleware, async (req, res) => {
 
         // Create or update watchlist item
         const stock = await Stock.findOneAndUpdate(
-            { userId: req.user.id, symbol: symbol.toUpperCase() },
+            { userId: req.user.userId, symbol: symbol.toUpperCase() },
             {
-                userId: req.user.id,
+                userId: req.user.userId,
                 symbol: symbol.toUpperCase(),
                 lastAnalysis: analysis,
                 notes: notes || '',
@@ -109,7 +109,7 @@ router.delete('/watchlist/:symbol', authMiddleware, async (req, res) => {
         const { symbol } = req.params;
 
         const result = await Stock.findOneAndDelete({
-            userId: req.user.id,
+            userId: req.user.userId,
             symbol: symbol.toUpperCase()
         });
 
@@ -136,7 +136,7 @@ router.put('/watchlist/:symbol/refresh', authMiddleware, async (req, res) => {
         const analysis = await stockService.analyzeStock(symbol);
 
         const stock = await Stock.findOneAndUpdate(
-            { userId: req.user.id, symbol: symbol.toUpperCase() },
+            { userId: req.user.userId, symbol: symbol.toUpperCase() },
             { lastAnalysis: analysis },
             { new: true }
         );
