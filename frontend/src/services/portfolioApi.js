@@ -135,6 +135,21 @@ const portfolioApi = {
         } catch (error) {
             throw new Error(error.response?.data?.error || 'Failed to fetch holding details');
         }
+    },
+
+    // Portfolio value over time: range = '1m' | '3m' | '6m' | '1y' (default '1y')
+    // -> { range, basis, currency, points: [{ date, value, invested }], startValue, endValue, change, changePercent }
+    getHistory: async (range = '1y', token) => {
+        try {
+            const params = new URLSearchParams({ range: range || '1y' }).toString();
+            const response = await axios.get(
+                `${API_URL}/portfolio/history?${params}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            return response.data;
+        } catch (error) {
+            throw new Error(error.response?.data?.error || 'Failed to fetch portfolio history');
+        }
     }
 };
 

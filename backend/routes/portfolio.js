@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const portfolioService = require('../services/portfolioService');
+const stockService = require('../services/stockService');
 const authMiddleware = require('../middleware/authMiddleware');
 const Transaction = require('../models/Transaction');
 const Portfolio = require('../models/Portfolio');
+const { statusFor } = require('../utils/errors');
 
 /**
  * @route   POST /api/portfolio/transaction
@@ -135,6 +137,27 @@ router.get('/performance', authMiddleware, async (req, res) => {
 });
 
 /**
+ * @route   GET /api/portfolio/history?range=1m|3m|6m|1y
+ * @desc    Daily portfolio value and invested amount over a range (default 1y)
+ * @access  Private
+ */
+router.get('/history', authMiddleware, async (req, res) => {
+    try {
+        const range = typeof req.query.range === 'string' && req.query.range ? req.query.range.toLowerCase() : '1y';
+
+        if (!portfolioService.HISTORY_RANGES.includes(range)) {
+            return res.status(400).json({ error: `range must be one of ${portfolioService.HISTORY_RANGES.join(', ')}` });
+        }
+
+        const history = await portfolioService.getHistory(req.user.userId, range);
+        res.json(history);
+    } catch (error) {
+        console.error('Get portfolio history error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
  * @route   PUT /api/portfolio/transaction/:id
  * @desc    Update a transaction
  * @access  Private
@@ -158,14 +181,8 @@ router.put('/transaction/:id', authMiddleware, async (req, res) => {
 
         await transaction.save();
 
-        // Recalculate portfolio
-        await portfolioService.updatePortfolio(
-            req.user.userId,
-            transaction.symbol,
-            transaction.type,
-            0, // No change in quantity for update
-            transaction.pricePerShare
-        );
+        // Recalculate portfolio from all transactions for this symbol
+        await portfolioService.recalculatePortfolio(req.user.userId, transaction.symbol);
 
         res.json(transaction);
     } catch (error) {
@@ -192,18 +209,16 @@ router.put('/holdings/:symbol', authMiddleware, async (req, res) => {
             return res.status(404).json({ error: 'Holding not found' });
         }
 
-        // Refresh with current price
-        const stockService = require('../services/stockService');
-        const analysis = await stockService.analyzeStock(symbol);
-        const currentPrice = parseFloat(analysis.currentMarketStatus.currentPrice);
+        // Refresh with the current price (light quote, not the full analysis)
+        const quote = await stockService.getQuote(symbol);
 
-        portfolio.calculateMetrics(currentPrice);
+        portfolio.calculateMetrics(quote.price);
         await portfolio.save();
 
         res.json(portfolio);
     } catch (error) {
-        console.error('Update holding error:', error);
-        res.status(500).json({ error: error.message });
+        console.error('Update holding error:', error.message);
+        res.status(statusFor(error)).json({ error: error.message });
     }
 });
 

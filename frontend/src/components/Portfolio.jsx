@@ -1,299 +1,305 @@
-import { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import AuthContext from '../context/AuthContext';
+import { useEffect, useEffectEvent, useState } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { Plus } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { useConfirm } from '../hooks/useConfirm';
+import { useDebounce } from '../hooks/useDebounce';
+import { useInterval } from '../hooks/useInterval';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useToast } from '../hooks/useToast';
 import portfolioApi from '../services/portfolioApi';
+import stockApi from '../services/stockApi';
+import { formatCurrency, formatDate } from '../utils/format';
+import { Button, PageHeader } from './ui';
+import { PortfolioHoldings } from './PortfolioHoldings';
+import { PortfolioKpis } from './PortfolioKpis';
+import { PortfolioTransactions } from './PortfolioTransactions';
+import { PortfolioTxModal } from './PortfolioTxModal';
+import { TX_PAGE_SIZE, formatQty, txDateKey } from './PortfolioUtils';
 import './Portfolio.css';
 
-const Portfolio = () => {
-    const { token } = useContext(AuthContext);
-    const navigate = useNavigate();
-    const [holdings, setHoldings] = useState([]);
-    const [summary, setSummary] = useState(null);
-    const [transactions, setTransactions] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [formData, setFormData] = useState({
-        symbol: '',
-        type: 'BUY',
-        quantity: '',
-        pricePerShare: '',
-        notes: ''
-    });
+/**
+ * Loads `load()` whenever `key` changes (null = wait). Keeps the last data while a
+ * new request is in flight so refreshes never blank a section.
+ * -> { data, error, loading, mutate(fn) }
+ */
+function useRemote(key, load) {
+    const [state, setState] = useState({ key: null, data: undefined, error: null });
+    const run = useEffectEvent(() => load());
 
     useEffect(() => {
-        fetchPortfolioData();
-    }, []);
-
-    const fetchPortfolioData = async () => {
-        try {
-            setLoading(true);
-            const [holdingsData, summaryData, transactionsData] = await Promise.all([
-                portfolioApi.getHoldings(token),
-                portfolioApi.getSummary(token),
-                portfolioApi.getTransactions({ limit: 10 }, token)
-            ]);
-            setHoldings(holdingsData);
-            setSummary(summaryData);
-            setTransactions(transactionsData.transactions || []);
-        } catch (error) {
-            console.error('Error fetching portfolio:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            await portfolioApi.createTransaction(formData, token);
-            setShowAddModal(false);
-            setFormData({ symbol: '', type: 'BUY', quantity: '', pricePerShare: '', notes: '' });
-            fetchPortfolioData();
-        } catch (error) {
-            alert(error.message);
-        }
-    };
-
-    const handleDelete = async (id) => {
-        if (window.confirm('Delete this transaction?')) {
-            try {
-                await portfolioApi.deleteTransaction(id, token);
-                fetchPortfolioData();
-            } catch (error) {
-                alert(error.message);
+        if (key === null) return undefined;
+        let alive = true;
+        Promise.resolve(run()).then(
+            (data) => {
+                if (alive) setState({ key, data, error: null });
+            },
+            (error) => {
+                if (alive) setState((prev) => ({ key, data: prev.data, error: error instanceof Error ? error : new Error(String(error)) }));
             }
-        }
-    };
-
-    const handleRefresh = async (symbol) => {
-        try {
-            await portfolioApi.updateHolding(symbol, token);
-            fetchPortfolioData();
-        } catch (error) {
-            alert(error.message);
-        }
-    };
-
-    const handleDeleteHolding = async (symbol) => {
-        if (window.confirm(`Are you sure you want to delete all holdings and transactions for ${symbol}? This cannot be undone.`)) {
-            try {
-                await portfolioApi.deleteHoldings(symbol, token);
-                fetchPortfolioData();
-            } catch (error) {
-                alert(error.message);
-            }
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="portfolio-container">
-                <div className="loading-state">
-                    <div className="loading-spinner-large"></div>
-                    <p>Loading Portfolio...</p>
-                </div>
-            </div>
         );
+        return () => {
+            alive = false;
+        };
+    }, [key]);
+
+    const loading = key !== null && state.key !== key;
+    return {
+        data: state.data,
+        error: loading ? null : state.error,
+        loading,
+        mutate: (fn) => setState((prev) => ({ ...prev, data: fn(prev.data) }))
+    };
+}
+
+const Portfolio = () => {
+    const { token } = useAuth();
+    const toast = useToast();
+    const confirm = useConfirm();
+    const isPhone = useMediaQuery('(max-width: 767px)');
+    const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Bumping a version refetches that resource (the summary/performance keys include the holdings version).
+    const [holdingsV, setHoldingsV] = useState(0);
+    const [summaryV, setSummaryV] = useState(0);
+    const [perfV, setPerfV] = useState(0);
+    const [txV, setTxV] = useState(0);
+    const [now, setNow] = useState(() => Date.now());
+    useInterval(() => setNow(Date.now()), 30000);
+
+    const holdings = useRemote(token ? `h:${token}:${holdingsV}` : null, async () => {
+        const list = await portfolioApi.getHoldings(token);
+        return Array.isArray(list) ? list : [];
+    });
+    const summary = useRemote(token ? `s:${token}:${holdingsV}:${summaryV}` : null, () => portfolioApi.getSummary(token));
+    const performance = useRemote(token ? `p:${token}:${holdingsV}:${perfV}` : null, () => portfolioApi.getPerformance(token));
+
+    // Names, currency and day change for each holding (light quotes, fetched after the holdings).
+    const symbols = Array.isArray(holdings.data) ? [...new Set(holdings.data.map((h) => h.symbol))].sort() : [];
+    const meta = useRemote(symbols.length ? `m:${symbols.join(',')}:${holdingsV}` : null, async () => {
+        const quotes = await Promise.all(symbols.map((s) => stockApi.getQuote(s).catch(() => null)));
+        return Object.fromEntries(symbols.map((s, i) => [s, quotes[i]]).filter(([, q]) => q));
+    });
+    const metaMap = meta.data || {};
+
+    // Transactions: server-side filter, search, sort and paging.
+    const [txType, setTxType] = useState('ALL');
+    const [txSearch, setTxSearch] = useState('');
+    const [txSort, setTxSort] = useState('desc');
+    const [txPage, setTxPage] = useState(1);
+    const debouncedSearch = useDebounce(txSearch.trim().toUpperCase(), 300);
+    const txQuery = {
+        page: txPage,
+        limit: TX_PAGE_SIZE,
+        sortBy: 'transactionDate',
+        sortOrder: txSort,
+        ...(txType !== 'ALL' ? { type: txType } : {}),
+        ...(debouncedSearch ? { symbol: debouncedSearch } : {})
+    };
+    const transactions = useRemote(token ? `t:${token}:${JSON.stringify(txQuery)}:${txV}` : null, () => portfolioApi.getTransactions(txQuery, token));
+    const txPages = Number(transactions.data?.pagination?.pages) || 0;
+    // A delete can leave the current page empty: step back to the last page that exists.
+    if (!transactions.loading && transactions.data && txPage > 1 && txPage > Math.max(1, txPages)) {
+        setTxPage(Math.max(1, txPages));
     }
 
+    const holdingsBySymbol = Object.fromEntries((holdings.data || []).map((h) => [h.symbol, h]));
+    const [hasAnyTx, setHasAnyTx] = useState(null);
+    const unfilteredTotal = txType === 'ALL' && !debouncedSearch && transactions.data ? Number(transactions.data.pagination?.total) || 0 : null;
+    if (unfilteredTotal !== null && (unfilteredTotal > 0) !== hasAnyTx) setHasAnyTx(unfilteredTotal > 0);
+
+    const reloadAll = () => {
+        setHoldingsV((v) => v + 1);
+        setTxV((v) => v + 1);
+    };
+
+    // Add / edit modal. A new `session` remounts the form so it always starts clean.
+    const [modal, setModal] = useState({ open: false, session: 0, mode: 'add', initial: null });
+    const openAdd = (preset = {}) => setModal((m) => ({
+        open: true,
+        session: m.session + 1,
+        mode: 'add',
+        initial: { symbol: preset.symbol || '', type: preset.type === 'SELL' ? 'SELL' : 'BUY' }
+    }));
+    const openEdit = (tx) => setModal((m) => ({ open: true, session: m.session + 1, mode: 'edit', initial: tx }));
+    const closeModal = () => setModal((m) => ({ ...m, open: false }));
+
+    // Deep link: /portfolio?add=1&symbol=XYZ[&type=SELL] opens the form, then the params are cleared.
+    const wantsAdd = searchParams.get('add') === '1';
+    const [handledLink, setHandledLink] = useState(null);
+    if (wantsAdd && handledLink !== location.key) {
+        setHandledLink(location.key);
+        openAdd({
+            symbol: (searchParams.get('symbol') || '').trim().toUpperCase(),
+            type: (searchParams.get('type') || '').trim().toUpperCase()
+        });
+    }
+    useEffect(() => {
+        if (wantsAdd) setSearchParams({}, { replace: true });
+    }, [wantsAdd, setSearchParams]);
+
+    // Row actions --------------------------------------------------------------------
+    const [refreshing, setRefreshing] = useState(() => new Set());
+    const [deletingSymbol, setDeletingSymbol] = useState(null);
+    const [deletingTx, setDeletingTx] = useState(null);
+
+    const refreshHolding = async (symbol) => {
+        setRefreshing((s) => new Set(s).add(symbol));
+        try {
+            const [updated, quote] = await Promise.all([
+                portfolioApi.updateHolding(symbol, token),
+                stockApi.getQuote(symbol).catch(() => null)
+            ]);
+            holdings.mutate((list) => (Array.isArray(list) ? list.map((h) => (h.symbol === symbol ? { ...h, ...updated } : h)) : list));
+            if (quote) meta.mutate((m) => ({ ...(m || {}), [symbol]: quote }));
+            setSummaryV((v) => v + 1);
+            setPerfV((v) => v + 1);
+            toast.success(`${symbol} is at ${formatCurrency(updated?.currentPrice, quote?.currency || 'USD')}.`, { title: 'Price updated' });
+        } catch (error) {
+            toast.error(error.message, { title: `Couldn't refresh ${symbol}` });
+        } finally {
+            setRefreshing((s) => {
+                const next = new Set(s);
+                next.delete(symbol);
+                return next;
+            });
+        }
+    };
+
+    const deleteHolding = async (symbol) => {
+        const ok = await confirm({
+            title: `Remove ${symbol} from your portfolio?`,
+            message: `This deletes your ${symbol} position and every ${symbol} transaction. It can't be undone.`,
+            confirmLabel: 'Remove holding'
+        });
+        if (!ok) return;
+        setDeletingSymbol(symbol);
+        try {
+            await portfolioApi.deleteHoldings(symbol, token);
+            toast.success(`${symbol} and its transactions were removed.`, { title: 'Holding removed' });
+            reloadAll();
+        } catch (error) {
+            toast.error(error.message, { title: `Couldn't remove ${symbol}` });
+        } finally {
+            setDeletingSymbol(null);
+        }
+    };
+
+    const deleteTransaction = async (tx) => {
+        const date = formatDate(txDateKey(tx.transactionDate), 'medium');
+        const ok = await confirm({
+            title: 'Delete this transaction?',
+            message: `${tx.type === 'BUY' ? 'Buy' : 'Sell'} of ${formatQty(tx.quantity)} ${tx.symbol} at ${formatCurrency(tx.pricePerShare, metaMap[tx.symbol]?.currency || 'USD')} on ${date}. Your ${tx.symbol} holding is recalculated from the remaining transactions.`,
+            confirmLabel: 'Delete transaction'
+        });
+        if (!ok) return;
+        setDeletingTx(tx._id);
+        try {
+            await portfolioApi.deleteTransaction(tx._id, token);
+            toast.success(`The ${tx.symbol} ${tx.type === 'BUY' ? 'buy' : 'sell'} from ${date} was deleted.`, { title: 'Transaction deleted' });
+            reloadAll();
+        } catch (error) {
+            toast.error(error.message, { title: "Couldn't delete the transaction" });
+        } finally {
+            setDeletingTx(null);
+        }
+    };
+
+    const clearFilters = () => {
+        setTxType('ALL');
+        setTxSearch('');
+        setTxPage(1);
+    };
+
     return (
-        <div className="portfolio-container">
-            <div className="portfolio-content">
-                <div className="portfolio-header">
-                    <div className="header-left">
-                        <button className="btn-back" onClick={() => navigate('/dashboard')}>
-                            ← Back to Dashboard
-                        </button>
-                        <h1 className="title">💼 My Portfolio</h1>
-                    </div>
-                    <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-                        + Add Transaction
-                    </button>
-                </div>
-
-                {/* Portfolio Summary */}
-                {summary && (
-                    <div className="summary-cards">
-                        <div className="summary-card">
-                            <div className="card-label">Total Value</div>
-                            <div className="card-value">${summary.totalValue.toFixed(2)}</div>
-                        </div>
-                        <div className="summary-card">
-                            <div className="card-label">Total Invested</div>
-                            <div className="card-value">${summary.totalInvested.toFixed(2)}</div>
-                        </div>
-                        <div className={`summary-card ${summary.totalProfitLoss >= 0 ? 'profit' : 'loss'}`}>
-                            <div className="card-label">Profit/Loss</div>
-                            <div className="card-value">
-                                ${summary.totalProfitLoss.toFixed(2)} ({summary.totalProfitLossPercent.toFixed(2)}%)
-                            </div>
-                        </div>
-                        <div className="summary-card">
-                            <div className="card-label">Holdings</div>
-                            <div className="card-value">{summary.holdingsCount}</div>
-                        </div>
-                    </div>
+        <div className="pf-page">
+            <PageHeader
+                className="pf-header fade-up"
+                title="Portfolio"
+                subtitle="Your positions, cost basis and every trade you have recorded, valued at the latest market prices."
+                actions={(
+                    <Button icon={Plus} onClick={() => openAdd()} data-testid="pf-add">
+                        Add transaction
+                    </Button>
                 )}
+            />
 
-                {/* Holdings Table */}
-                <div className="section">
-                    <h2>📊 Current Holdings</h2>
-                    {holdings.length === 0 ? (
-                        <p className="empty-message">No holdings yet. Add your first transaction!</p>
-                    ) : (
-                        <div className="table-container">
-                            <table className="holdings-table">
-                                <thead>
-                                    <tr>
-                                        <th>Symbol</th>
-                                        <th>Shares</th>
-                                        <th>Avg Price</th>
-                                        <th>Current Price</th>
-                                        <th>Value</th>
-                                        <th>P/L</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {holdings.map((holding) => (
-                                        <tr key={holding._id}>
-                                            <td className="symbol-cell">{holding.symbol}</td>
-                                            <td>{holding.totalShares}</td>
-                                            <td>${holding.averageBuyPrice.toFixed(2)}</td>
-                                            <td>${holding.currentPrice.toFixed(2)}</td>
-                                            <td>${holding.currentValue.toFixed(2)}</td>
-                                            <td className={holding.profitLoss >= 0 ? 'profit-text' : 'loss-text'}>
-                                                ${holding.profitLoss.toFixed(2)} ({holding.profitLossPercent.toFixed(2)}%)
-                                            </td>
-                                            <td>
-                                                <button
-                                                    className="btn-small"
-                                                    onClick={() => handleRefresh(holding.symbol)}
-                                                >
-                                                    🔄
-                                                </button>
-                                                <button
-                                                    className="btn-small btn-delete-holding"
-                                                    onClick={() => handleDeleteHolding(holding.symbol)}
-                                                    title="Delete Holding"
-                                                    style={{ marginLeft: '8px', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444' }}
-                                                >
-                                                    🗑️
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+            <PortfolioKpis
+                summary={summary.data}
+                summaryLoading={!summary.data && summary.loading}
+                summaryError={!summary.data ? summary.error : null}
+                performance={performance.data}
+                perfLoading={!performance.data && performance.loading}
+                perfError={!performance.data ? performance.error : null}
+                onRetrySummary={() => setSummaryV((v) => v + 1)}
+                onRetryPerf={() => setPerfV((v) => v + 1)}
+            />
 
-                {/* Recent Transactions */}
-                <div className="section">
-                    <h2>📝 Recent Transactions</h2>
-                    {transactions.length === 0 ? (
-                        <p className="empty-message">No transactions yet.</p>
-                    ) : (
-                        <div className="transactions-list">
-                            {transactions.map((txn) => (
-                                <div key={txn._id} className="transaction-item">
-                                    <div className="txn-main">
-                                        <span className={`txn-type ${txn.type.toLowerCase()}`}>{txn.type}</span>
-                                        <span className="txn-symbol">{txn.symbol}</span>
-                                        <span className="txn-details">
-                                            {txn.quantity} shares @ ${txn.pricePerShare.toFixed(2)}
-                                        </span>
-                                        <span className="txn-total">${txn.totalAmount.toFixed(2)}</span>
-                                    </div>
-                                    <div className="txn-footer">
-                                        <span className="txn-date">
-                                            {new Date(txn.transactionDate).toLocaleDateString()}
-                                        </span>
-                                        <button
-                                            className="btn-delete"
-                                            onClick={() => handleDelete(txn._id)}
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+            <PortfolioHoldings
+                style={{ '--i': 5 }}
+                holdings={holdings.data}
+                meta={metaMap}
+                loading={holdings.loading}
+                error={holdings.error}
+                onRetry={() => setHoldingsV((v) => v + 1)}
+                isPhone={isPhone}
+                refreshing={refreshing}
+                deleting={deletingSymbol}
+                onRefresh={refreshHolding}
+                onRefreshAll={() => setHoldingsV((v) => v + 1)}
+                onBuyMore={(symbol) => openAdd({ symbol, type: 'BUY' })}
+                onDelete={deleteHolding}
+                onAdd={openAdd}
+                hasTransactions={Boolean(hasAnyTx)}
+                now={now}
+            />
 
-            {/* Add Transaction Modal */}
-            {showAddModal && (
-                <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h2>Add Transaction</h2>
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label>Stock Symbol</label>
-                                <input
-                                    type="text"
-                                    value={formData.symbol}
-                                    onChange={(e) => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
-                                    placeholder="AAPL"
-                                    required
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Type</label>
-                                <select
-                                    value={formData.type}
-                                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                >
-                                    <option value="BUY">BUY</option>
-                                    <option value="SELL">SELL</option>
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label>Quantity</label>
-                                <input
-                                    type="number"
-                                    value={formData.quantity}
-                                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                                    placeholder="10"
-                                    min="0"
-                                    step="any"
-                                    required
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Price Per Share</label>
-                                <input
-                                    type="number"
-                                    value={formData.pricePerShare}
-                                    onChange={(e) => setFormData({ ...formData, pricePerShare: e.target.value })}
-                                    placeholder="150.00"
-                                    min="0"
-                                    step="0.01"
-                                    required
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Notes (Optional)</label>
-                                <textarea
-                                    value={formData.notes}
-                                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                                    placeholder="Add notes..."
-                                    rows="3"
-                                />
-                            </div>
-                            <div className="modal-actions">
-                                <button type="button" className="btn-secondary" onClick={() => setShowAddModal(false)}>
-                                    Cancel
-                                </button>
-                                <button type="submit" className="btn-primary">
-                                    Add Transaction
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+            <PortfolioTransactions
+                style={{ '--i': 6 }}
+                data={transactions.data}
+                loading={transactions.loading}
+                error={transactions.error}
+                onRetry={() => setTxV((v) => v + 1)}
+                type={txType}
+                onTypeChange={(value) => {
+                    setTxType(value);
+                    setTxPage(1);
+                }}
+                search={txSearch}
+                onSearchChange={(value) => {
+                    setTxSearch(value);
+                    setTxPage(1);
+                }}
+                sortOrder={txSort}
+                onSortToggle={() => {
+                    setTxSort((s) => (s === 'desc' ? 'asc' : 'desc'));
+                    setTxPage(1);
+                }}
+                page={txPage}
+                onPageChange={setTxPage}
+                onClearFilters={clearFilters}
+                isPhone={isPhone}
+                deletingId={deletingTx}
+                onEdit={openEdit}
+                onDelete={deleteTransaction}
+                currencyFor={(symbol) => metaMap[symbol]?.currency || 'USD'}
+            />
+
+            {modal.session > 0 && (
+                <PortfolioTxModal
+                    key={modal.session}
+                    open={modal.open}
+                    mode={modal.mode}
+                    initial={modal.initial}
+                    holdingsBySymbol={holdingsBySymbol}
+                    token={token}
+                    onClose={closeModal}
+                    onSaved={() => {
+                        closeModal();
+                        reloadAll();
+                    }}
+                />
             )}
         </div>
     );

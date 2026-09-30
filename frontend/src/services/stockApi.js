@@ -2,6 +2,17 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
+// '?a=1&b=2' from an object, skipping empty values ('' when nothing is left).
+const toQuery = (params) => {
+    if (!params || typeof params !== 'object') return '';
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') search.append(key, String(value));
+    });
+    const text = search.toString();
+    return text ? `?${text}` : '';
+};
+
 const stockApi = {
     // Analyze a single stock
     analyzeStock: async (symbol) => {
@@ -23,13 +34,28 @@ const stockApi = {
         }
     },
 
-    // Get watchlist
-    getWatchlist: async (token) => {
+    // Get watchlist (array, newest first). Optional params:
+    // { limit, skip, recommendation: 'BUY'|'HOLD'|'SELL', sort: 'newest'|'oldest'|'symbol'|'change' }
+    getWatchlist: async (token, params) => {
         try {
-            const response = await axios.get(`${API_URL}/stock/watchlist`, {
+            const response = await axios.get(`${API_URL}/stock/watchlist${toQuery(params)}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             return response.data;
+        } catch (error) {
+            throw new Error(error.response?.data?.error || 'Failed to fetch watchlist');
+        }
+    },
+
+    // Paged watchlist: { items, total } (total comes from the X-Total-Count header)
+    getWatchlistPage: async (token, params) => {
+        try {
+            const response = await axios.get(`${API_URL}/stock/watchlist${toQuery(params)}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const items = Array.isArray(response.data) ? response.data : [];
+            const header = Number.parseInt(response.headers?.['x-total-count'], 10);
+            return { items, total: Number.isFinite(header) ? header : items.length };
         } catch (error) {
             throw new Error(error.response?.data?.error || 'Failed to fetch watchlist');
         }
@@ -85,13 +111,35 @@ const stockApi = {
         }
     },
 
-    // Get screener stocks
-    getScreenerStocks: async () => {
+    // Get screener rows: market = 'stocks' (default) | 'crypto'
+    getScreenerStocks: async (market = 'stocks') => {
         try {
-            const response = await axios.get(`${API_URL}/stock/screener`);
+            const response = await axios.get(`${API_URL}/stock/screener${toQuery({ market })}`);
             return response.data;
         } catch (error) {
             throw new Error(error.response?.data?.error || 'Failed to fetch screener data');
+        }
+    },
+
+    // Symbol autocomplete: [{ symbol, name, exchange, type }] (max 8). Empty query -> []
+    searchSymbols: async (q) => {
+        const query = String(q ?? '').trim();
+        if (!query) return [];
+        try {
+            const response = await axios.get(`${API_URL}/stock/search${toQuery({ q: query })}`);
+            return Array.isArray(response.data) ? response.data : [];
+        } catch (error) {
+            throw new Error(error.response?.data?.error || 'Failed to search symbols');
+        }
+    },
+
+    // Light quote: { symbol, name, price, change, changePercent, currency, marketState, quoteType }
+    getQuote: async (symbol) => {
+        try {
+            const response = await axios.get(`${API_URL}/stock/quote/${encodeURIComponent(String(symbol ?? '').trim())}`);
+            return response.data;
+        } catch (error) {
+            throw new Error(error.response?.data?.error || 'Failed to fetch quote');
         }
     },
 };

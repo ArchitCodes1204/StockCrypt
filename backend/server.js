@@ -34,7 +34,9 @@ const corsOptions = {
             callback(new Error('Not allowed by CORS'));
         }
     },
-    credentials: true
+    credentials: true,
+    // Let the browser read these response headers (watchlist pagination, analysis cache status)
+    exposedHeaders: ['X-Total-Count', 'X-Cache']
 };
 
 app.use(cors(corsOptions));
