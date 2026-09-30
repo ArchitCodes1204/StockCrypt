@@ -1,10 +1,8 @@
-# 📊 StockCrypt - AI-Powered Stock Analysis Platform
+# StockCrypt - AI-Powered Stock Analysis Platform
 
-**Hosted Frontend URL:** [Coming Soon - Deploy to Vercel]
 
----
 
-## 📋 Project Proposal
+## Project Proposal
 
 ### Problem Statement
 Individual investors struggle to make informed stock investment decisions due to:
@@ -25,47 +23,47 @@ StockCrypt is an AI-powered stock analysis platform that provides:
 
 ---
 
-## ✅ Evaluation Checklist
+##  Evaluation Checklist
 
 ### 1. Backend CRUD Operations (Non-Auth)
 
 #### CREATE Operations (2+)
-- ✅ **POST `/api/stock/watchlist`** - Add stock to user's watchlist
-- ✅ **POST `/api/stock/analyze`** - Create new stock analysis
-- ✅ **POST `/api/stock/compare`** - Create comparison between two stocks
+- **POST `/api/stock/watchlist`** - Add stock to user's watchlist
+- **POST `/api/stock/analyze`** - Create new stock analysis
+- **POST `/api/stock/compare`** - Create comparison between two stocks
 
 #### READ Operations (2+)
-- ✅ **GET `/api/stock/watchlist`** - Read user's watchlist
-- ✅ **GET `/api/stock/trending`** - Read trending stocks
-- ✅ **POST `/api/stock/analyze`** - Read stock analysis data
+-  **GET `/api/stock/watchlist`** - Read user's watchlist
+-  **GET `/api/stock/trending`** - Read trending stocks
+-  **POST `/api/stock/analyze`** - Read stock analysis data
 
 #### UPDATE Operations (2+)
-- ✅ **PUT `/api/stock/watchlist/:symbol/refresh`** - Update/refresh stock analysis
-- ✅ **POST `/api/stock/watchlist`** - Update watchlist with notes
+-  **PUT `/api/stock/watchlist/:symbol/refresh`** - Update/refresh stock analysis
+-  **POST `/api/stock/watchlist`** - Update watchlist with notes
 
 #### DELETE Operations (2+)
-- ✅ **DELETE `/api/stock/watchlist/:symbol`** - Remove stock from watchlist
-- ✅ Cache invalidation on stock updates
+-  **DELETE `/api/stock/watchlist/:symbol`** - Remove stock from watchlist
+- Cache invalidation on stock updates
 
 ### 2. Advanced Features
 
 #### Pagination
-- ✅ Watchlist supports pagination (limit/offset parameters)
-- ✅ Historical data pagination (1-year data in chunks)
+-  Watchlist supports pagination (limit/offset parameters)
+-  Historical data pagination (1-year data in chunks)
 
 #### Searching
-- ✅ Stock symbol search in Research page
-- ✅ Watchlist filtering by symbol
-- ✅ Quick stock search with popular suggestions
+-  Stock symbol search in Research page
+-  Watchlist filtering by symbol
+-  Quick stock search with popular suggestions
 
 #### Sorting
-- ✅ Watchlist sorted by date added (newest first)
-- ✅ Can sort by recommendation, risk score, performance
+-  Watchlist sorted by date added (newest first)
+-  Can sort by recommendation, risk score, performance
 
 #### Filtering
-- ✅ Filter stocks by recommendation (BUY/HOLD/SELL)
-- ✅ Filter by risk level (Low/Moderate/High)
-- ✅ Filter by performance (positive/negative)
+-  Filter stocks by recommendation (BUY/HOLD/SELL)
+-  Filter by risk level (Low/Moderate/High)
+-  Filter by performance (positive/negative)
 
 ### 3. Hosting Verification
 
