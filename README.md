@@ -340,10 +340,10 @@ This project is created for educational purposes as part of a capstone project.
 
 For issues or questions:
 - Create an issue on GitHub
-- Contact: [Your Email]
+- Contact: [archit0825@gmail.com]
 
 ---
 
-**Last Updated**: December 2024
+**Last Updated**: September 2026
 
 <!-- Test commit: checking GitHub attribution for archit0825@gmail.com -->
